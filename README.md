@@ -73,3 +73,40 @@ response = client.beta.messages.create(
         }
     ] + deferred_tools # Tools marked with defer_loading=True
 )
+```
+### 2. Simulating Production Load
+To get realistic metrics, we generate "heavy" tool definitions that mimic complex enterprise schemas.
+
+```python
+# src/utils.py
+
+def generate_dummy_tools(count=50):
+    return [{
+        "name": f"get_metric_{i}",
+        "description": "Complex retrieval tool for specific user segments...",
+        "defer_loading": True  # <--- This triggers the search behavior
+    } for i in range(count)]
+```
+
+### 📊 Sample Output
+The CLI uses `rich` to visualize the delta between architectures.
+
+```text
+Performance Comparison
+┏━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━┓
+┃ Metric           ┃ Standard           ┃ Deferred (Search)   ┃ Delta        ┃
+┡━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━┩
+│ Latency (s)      │ 2.105s             │ 3.850s              │ +1.745s      │
+│ Input Tokens     │ 18,450             │ 1,240               │ -17,210      │
+└──────────────────┴────────────────────┴─────────────────────┴──────────────┘
+Analysis: Deferred loading reduced token consumption by 93%, but increased latency by 82% due to the sequential inference passes.
+```
+
+## Contributing
+PRs are welcome! Specifically looking for:
+
+- [ ] Profiling for the Regex search tool variant.
+- [ ] Cost estimation calculator based on current token prices.
+
+## 📄 License
+MIT © Alex
